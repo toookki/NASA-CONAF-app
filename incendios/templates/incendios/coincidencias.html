@@ -16,17 +16,10 @@
 <body>
     <header>
         <h1>Coincidencias NASA–CONAF</h1>
-        <p>
-            Asociación entre incendios forestales registrados y
-            focos de calor satelitales
-        </p>
-
-        <p>
-            <a href="{% url 'dashboard' %}" style="color: white;">
-                Volver al dashboard
-            </a>
-        </p>
+        <p>Asociación entre incendios registrados y focos de calor satelitales</p>
     </header>
+
+    {% include "incendios/_navegacion.html" %}
 
     <main>
         <section class="panel">

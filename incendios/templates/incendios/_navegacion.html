@@ -1,0 +1,39 @@
+<nav class="navegacion-principal" aria-label="Navegación principal">
+    <div class="navegacion-contenido">
+        <div class="navegacion-enlaces">
+
+            {% if request.resolver_match.url_name == "dashboard" %}
+                <a class="activo" href="{% url 'dashboard' %}" aria-current="page">
+                    Evolución
+                </a>
+            {% else %}
+                <a href="{% url 'dashboard' %}">Evolución</a>
+            {% endif %}
+
+            {% if request.resolver_match.url_name == "causas" %}
+                <a class="activo" href="{% url 'causas' %}" aria-current="page">
+                    Causas
+                </a>
+            {% else %}
+                <a href="{% url 'causas' %}">Causas</a>
+            {% endif %}
+
+            {% if request.resolver_match.url_name == "coincidencias" %}
+                <a class="activo" href="{% url 'coincidencias' %}" aria-current="page">
+                    Coincidencias
+                </a>
+            {% else %}
+                <a href="{% url 'coincidencias' %}">Coincidencias</a>
+            {% endif %}
+
+            {% if request.resolver_match.url_name == "vegetacion" %}
+                <a class="activo" href="{% url 'vegetacion' %}" aria-current="page">
+                    Vegetación
+                </a>
+            {% else %}
+                <a href="{% url 'vegetacion' %}">Vegetación</a>
+            {% endif %}
+
+        </div>
+    </div>
+</nav>

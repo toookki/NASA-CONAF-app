@@ -21,16 +21,22 @@ body {
 header {
     background: #163348;
     color: white;
-    padding: 36px 8%;
+    padding: 34px max(20px, calc((100% - 1150px) / 2 + 20px));
 }
 
 header h1 {
-    margin: 0 0 12px;
+    margin: 0 0 10px;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.25;
 }
 
 header p {
-    margin: 5px 0;
+    margin: 0;
     color: #d5e0e8;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.6;
 }
 
 header a {
@@ -43,7 +49,75 @@ header a:hover {
 
 
 /* ==========================================
-   3. Contenedor principal y paneles
+   3. Navegación principal
+   ========================================== */
+
+.navegacion-principal {
+    width: 100%;
+    background: #176b83;
+}
+
+.navegacion-contenido {
+    max-width: 1150px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.navegacion-enlaces {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+}
+
+.navegacion-enlaces a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 19px 22px;
+    color: #d5e9ef;
+    font-size: 15px;
+    font-weight: 400;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+}
+
+.navegacion-enlaces a:hover {
+    color: white;
+    background: #ffffff18;
+}
+
+.navegacion-enlaces a:focus-visible {
+    outline: 2px solid white;
+    outline-offset: -4px;
+}
+
+/* Página activa */
+
+.navegacion-enlaces a.activo {
+    color: white;
+    font-weight: 700;
+}
+
+/* Indicador triangular */
+
+.navegacion-enlaces a.activo::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #f4f6f8;
+}
+
+
+/* ==========================================
+   4. Contenedor principal y paneles
    ========================================== */
 
 main {
@@ -70,7 +144,7 @@ main {
 
 
 /* ==========================================
-   4. Formularios y filtros
+   5. Formularios y filtros
    ========================================== */
 
 form {
@@ -98,15 +172,22 @@ button {
     background: #176b83;
     color: white;
     cursor: pointer;
+    transition: background 0.2s;
 }
 
 button:hover {
     background: #12566a;
 }
 
+button:focus-visible,
+select:focus-visible {
+    outline: 2px solid #176b83;
+    outline-offset: 2px;
+}
+
 
 /* ==========================================
-   5. Indicadores estadísticos
+   6. Indicadores estadísticos
    ========================================== */
 
 .indicadores {
@@ -128,18 +209,19 @@ button:hover {
     margin-top: 0;
     color: #647587;
     font-size: 15px;
+    font-weight: 600;
 }
 
 .indicador p {
     margin-bottom: 0;
     font-size: 27px;
-    font-weight: bold;
+    font-weight: 700;
     overflow-wrap: anywhere;
 }
 
 
 /* ==========================================
-   6. Gráficos
+   7. Gráficos
    ========================================== */
 
 .grafico {
@@ -148,9 +230,15 @@ button:hover {
     height: 320px;
 }
 
+/* Gráfico con diez categorías de vegetación */
+
+.grafico.grafico-alto {
+    height: 480px;
+}
+
 
 /* ==========================================
-   7. Tablas de resultados
+   8. Tablas de resultados
    ========================================== */
 
 .tabla-contenedor {
@@ -172,7 +260,7 @@ td {
 
 th {
     background: #edf2f5;
-    font-weight: bold;
+    font-weight: 700;
 }
 
 tbody tr:hover {
@@ -181,24 +269,46 @@ tbody tr:hover {
 
 
 /* ==========================================
-   8. Diseño responsivo
+   9. Pantallas medianas
    ========================================== */
 
-/* Pantallas medianas */
 @media (max-width: 950px) {
     .indicadores.indicadores-cuatro {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-/* Tablets y pantallas pequeñas */
+
+/* ==========================================
+   10. Tablets y pantallas pequeñas
+   ========================================== */
+
 @media (max-width: 700px) {
     header {
-        padding: 28px 20px;
+        padding: 26px 20px;
     }
 
     header h1 {
-        font-size: 28px;
+        font-size: 25px;
+    }
+
+    header p {
+        font-size: 14px;
+    }
+
+    .navegacion-contenido {
+        padding: 0 10px;
+    }
+
+    .navegacion-enlaces {
+        overflow-x: auto;
+        gap: 0;
+        scrollbar-width: thin;
+    }
+
+    .navegacion-enlaces a {
+        padding: 17px 15px;
+        font-size: 14px;
     }
 
     main {
@@ -231,7 +341,11 @@ tbody tr:hover {
     }
 }
 
-/* Teléfonos */
+
+/* ==========================================
+   11. Teléfonos
+   ========================================== */
+
 @media (max-width: 600px) {
     .indicadores.indicadores-cuatro {
         grid-template-columns: 1fr;
@@ -251,13 +365,4 @@ tbody tr:hover {
     .grafico {
         height: 260px;
     }
-}
-
-
-/* ==========================================
-   9. Gráfico de vegetación
-   ========================================== */
-
-.grafico.grafico-alto {
-    height: 480px;
 }

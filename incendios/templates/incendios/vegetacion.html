@@ -17,13 +17,9 @@
     <header>
         <h1>Vegetación afectada por incendios forestales</h1>
         <p>Análisis de superficie quemada según tipo de vegetación</p>
-
-        <p>
-            <a href="{% url 'dashboard' %}">
-                Volver al dashboard
-            </a>
-        </p>
     </header>
+
+    {% include "incendios/_navegacion.html" %}
 
     <main>
         <section class="panel">

@@ -18,22 +18,9 @@
         <h1>Incendios Forestales en Chile</h1>
         <p>Estadísticas CONAF y detecciones satelitales NASA FIRMS</p>
         <p>Temporadas 2014–2015 a 2018–2019</p>
-        <p>
-            <a href="{% url 'causas' %}" style="color: white;">
-                Explorar causas de incendios
-            </a>
-        </p>
-        <p>
-            <a href="{% url 'coincidencias' %}" style="color: white;">
-                Explorar coincidencias NASA–CONAF
-            </a>
-        </p>
-        <p>
-            <a href="{% url 'vegetacion' %}">
-                Explorar vegetación afectada
-            </a>
-        </p>
     </header>
+
+    {% include "incendios/_navegacion.html" %}
 
     <main>
         <section class="panel">

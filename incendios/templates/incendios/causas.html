@@ -17,12 +17,9 @@
     <header>
         <h1>Causas de incendios forestales</h1>
         <p>Análisis de registros históricos CONAF</p>
-        <p>
-            <a href="{% url 'dashboard' %}" style="color: white;">
-                Volver al dashboard
-            </a>
-        </p>
     </header>
+
+    {% include "incendios/_navegacion.html" %}
 
     <main>
         <section class="panel">
