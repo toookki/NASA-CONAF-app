@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NASA–CONAF | Incendios Forestales</title>
+
+    <link rel="stylesheet" href="{% static 'incendios/estilos.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <h1>Incendios Forestales en Chile</h1>
+        <p>Estadísticas CONAF y detecciones satelitales NASA FIRMS</p>
+        <p>Temporadas 2014–2015 a 2018–2019</p>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2>Explorar datos</h2>
+
+            <form method="get">
+                <label for="region">Región:</label>
+
+                <select name="region" id="region">
+                    <option value="">Todas las regiones</option>
+
+                    {% for region in regiones %}
+                    <option value="{{ region.id_region }}" {% if region.id_region == region_seleccionada %}selected{% endif %}>
+                        {{ region.nombre_region }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit">Aplicar filtro</button>
+            </form>
+        </section>
+
+        <section class="indicadores">
+            <article class="indicador">
+                <h3>Incendios registrados</h3>
+                <p>{{ totales.incendios }}</p>
+            </article>
+
+            <article class="indicador">
+                <h3>Superficie afectada</h3>
+                <p>{{ totales.superficie|floatformat:2 }} ha</p>
+            </article>
+
+            <article class="indicador">
+                <h3>Focos detectados</h3>
+                <p>{{ totales.focos }}</p>
+            </article>
+        </section>
+
+        <section class="panel">
+            <h2>Superficie quemada por temporada</h2>
+
+            <div class="grafico">
+                <canvas id="graficoSuperficie"></canvas>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Evolución de los incendios</h2>
+
+            <div class="tabla-contenedor">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Temporada</th>
+                            <th>Incendios</th>
+                            <th>Superficie (ha)</th>
+                            <th>Focos NASA</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for temporada in temporadas %}
+                        <tr>
+                            <td>{{ temporada.nombre }}</td>
+                            <td>{{ temporada.incendios }}</td>
+                            <td>{{ temporada.superficie|floatformat:2 }}</td>
+                            <td>{{ temporada.focos }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">
+                                No hay datos disponibles para los filtros seleccionados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    {{ grafico|json_script:"datos-grafico" }}
+
+    <script>
+        const datos = JSON.parse(
+            document.getElementById("datos-grafico").textContent
+        );
+
+        const canvas = document.getElementById("graficoSuperficie");
+
+        new Chart(canvas, {
+            type: "bar",
+            data: {
+                labels: datos.etiquetas,
+                datasets: [
+                    {
+                        label: "Superficie quemada (ha)",
+                        data: datos.superficie,
+                        backgroundColor: "#e97646",
+                        borderRadius: 5
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
