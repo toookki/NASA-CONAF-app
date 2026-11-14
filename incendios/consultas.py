@@ -131,3 +131,89 @@ def obtener_causas(region_id=None, temporada=None):
     """
 
     return ejecutar_consulta(sql, parametros)
+
+def obtener_coincidencias(region_id=None, temporada=None):
+    """Analiza coincidencias NASA-CONAF por temporada."""
+    from datetime import date
+
+    condiciones = []
+    parametros = []
+
+    if region_id is not None:
+        condiciones.append("p.id_region = %s")
+        parametros.append(region_id)
+
+    if temporada is not None:
+        condiciones.append(
+            "i.fecha >= %s AND i.fecha < %s"
+        )
+        parametros.extend([
+            date(temporada, 7, 1),
+            date(temporada + 1, 7, 1),
+        ])
+
+    filtro = (
+        "WHERE " + " AND ".join(condiciones)
+        if condiciones else ""
+    )
+
+    sql = f"""
+        WITH incendios_filtrados AS (
+            SELECT
+                i.id_incendio,
+                EXTRACT(
+                    YEAR FROM i.fecha - INTERVAL '6 months'
+                )::integer AS temporada_inicio
+            FROM electromaquinas.incendio i
+            JOIN electromaquinas.comuna c
+                ON i.id_comuna = c.id_comuna
+            JOIN electromaquinas.provincia p
+                ON c.id_provincia = p.id_provincia
+            {filtro}
+        ),
+        relaciones AS (
+            SELECT
+                i.id_incendio,
+                i.temporada_inicio,
+                co.id_foco
+            FROM incendios_filtrados i
+            LEFT JOIN electromaquinas.coincide co
+                ON i.id_incendio = co.id_incendio
+        ),
+        resumen_temporada AS (
+            SELECT
+                temporada_inicio,
+                COUNT(DISTINCT id_incendio) AS total_incendios,
+                COUNT(DISTINCT id_incendio)
+                    FILTER (WHERE id_foco IS NOT NULL)
+                    AS incendios_coincidentes,
+                COUNT(id_foco) AS total_vinculos,
+                COUNT(DISTINCT id_foco) AS focos_unicos_temporada
+            FROM relaciones
+            GROUP BY temporada_inicio
+        ),
+        resumen_global AS (
+            SELECT
+                COUNT(DISTINCT id_foco) AS focos_unicos
+            FROM relaciones
+        )
+        SELECT
+            r.temporada_inicio,
+            r.total_incendios,
+            r.incendios_coincidentes,
+            r.total_incendios - r.incendios_coincidentes
+                AS incendios_sin_coincidencia,
+            r.total_vinculos,
+            r.focos_unicos_temporada,
+            g.focos_unicos,
+            ROUND(
+                100.0 * r.incendios_coincidentes
+                / NULLIF(r.total_incendios, 0),
+                2
+            ) AS porcentaje_coincidencia
+        FROM resumen_temporada r
+        CROSS JOIN resumen_global g
+        ORDER BY r.temporada_inicio;
+    """
+
+    return ejecutar_consulta(sql, parametros)
