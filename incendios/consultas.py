@@ -74,3 +74,60 @@ def obtener_evolucion(region_id=None):
     """
 
     return ejecutar_consulta(sql, parametros * 2)
+
+def obtener_causas(region_id=None, temporada=None):
+    """Resume incendios por causa, región y temporada."""
+    from datetime import date
+
+    condiciones = []
+    parametros = []
+
+    if region_id is not None:
+        condiciones.append("p.id_region = %s")
+        parametros.append(region_id)
+
+    if temporada is not None:
+        condiciones.append(
+            "i.fecha >= %s AND i.fecha < %s"
+        )
+        parametros.extend([
+            date(temporada, 7, 1),
+            date(temporada + 1, 7, 1),
+        ])
+
+    filtro = (
+        "WHERE " + " AND ".join(condiciones)
+        if condiciones else ""
+    )
+
+    sql = f"""
+        WITH resumen_causas AS (
+            SELECT
+                COALESCE(
+                    NULLIF(BTRIM(i.causa::text), ''),
+                    'Sin especificar'
+                ) AS causa,
+                COUNT(*) AS total_incendios,
+                COALESCE(SUM(i.superficie_total_ha), 0)::numeric AS superficie_ha
+            FROM electromaquinas.incendio i
+            JOIN electromaquinas.comuna c
+                ON i.id_comuna = c.id_comuna
+            JOIN electromaquinas.provincia p
+                ON c.id_provincia = p.id_provincia
+            {filtro}
+            GROUP BY 1
+        )
+        SELECT
+            causa,
+            total_incendios,
+            superficie_ha,
+            ROUND(
+                100.0 * total_incendios
+                / NULLIF(SUM(total_incendios) OVER (), 0),
+                2
+            ) AS porcentaje
+        FROM resumen_causas
+        ORDER BY total_incendios DESC, causa;
+    """
+
+    return ejecutar_consulta(sql, parametros)

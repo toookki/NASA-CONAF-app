@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NASA–CONAF | Causas de incendios</title>
+
+    <link rel="stylesheet" href="{% static 'incendios/estilos.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <h1>Causas de incendios forestales</h1>
+        <p>Análisis de registros históricos CONAF</p>
+        <p>
+            <a href="{% url 'dashboard' %}" style="color: white;">
+                Volver al dashboard
+            </a>
+        </p>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2>Filtros de análisis</h2>
+
+            <form method="get">
+                <label for="region">Región:</label>
+
+                <select name="region" id="region">
+                    <option value="">Todas las regiones</option>
+
+                    {% for region in regiones %}
+                        {% if region.id_region == region_seleccionada %}
+                            <option value="{{ region.id_region }}" selected>
+                                {{ region.nombre_region }}
+                            </option>
+                        {% else %}
+                            <option value="{{ region.id_region }}">
+                                {{ region.nombre_region }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                <label for="temporada">Temporada:</label>
+
+                <select name="temporada" id="temporada">
+                    <option value="">Todas las temporadas</option>
+
+                    {% for temporada in temporadas %}
+                        {% if temporada.inicio == temporada_seleccionada %}
+                            <option value="{{ temporada.inicio }}" selected>
+                                {{ temporada.nombre }}
+                            </option>
+                        {% else %}
+                            <option value="{{ temporada.inicio }}">
+                                {{ temporada.nombre }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                <button type="submit">Aplicar filtros</button>
+            </form>
+        </section>
+
+        <section class="indicadores">
+            <article class="indicador">
+                <h3>Incendios registrados</h3>
+                <p>{{ resumen.incendios }}</p>
+            </article>
+
+            <article class="indicador">
+                <h3>Superficie afectada</h3>
+                <p>{{ resumen.superficie|floatformat:2 }} ha</p>
+            </article>
+
+            <article class="indicador">
+                <h3>Causas distintas</h3>
+                <p>{{ resumen.causas }}</p>
+            </article>
+        </section>
+
+        <section class="panel">
+            <h2>Principales causas registradas</h2>
+
+            <div class="grafico">
+                <canvas id="graficoCausas"></canvas>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Detalle por causa</h2>
+
+            <div class="tabla-contenedor">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Causa</th>
+                            <th>Incendios</th>
+                            <th>Participación (%)</th>
+                            <th>Superficie (ha)</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for fila in datos %}
+                            <tr>
+                                <td>{{ fila.causa }}</td>
+                                <td>{{ fila.incendios }}</td>
+                                <td>{{ fila.porcentaje|floatformat:2 }}</td>
+                                <td>{{ fila.superficie|floatformat:2 }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4">
+                                    No hay resultados para los filtros seleccionados.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    {{ grafico|json_script:"datos-causas" }}
+
+    <script>
+        const datos = JSON.parse(
+            document.getElementById("datos-causas").textContent
+        );
+
+        new Chart(document.getElementById("graficoCausas"), {
+            type: "bar",
+            data: {
+                labels: datos.etiquetas,
+                datasets: [{
+                    label: "Incendios registrados",
+                    data: datos.valores,
+                    backgroundColor: "#e97646",
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
