@@ -3,8 +3,10 @@
 from decimal import Decimal
 from unittest.mock import patch
 
-from django.test import SimpleTestCase
+from django.test import RequestFactory, SimpleTestCase
 from django.urls import reverse
+
+from .filtros import FiltroInvalido, opciones_temporadas, validar_filtros
 
 
 class VistasIncendiosTests(SimpleTestCase):
@@ -166,3 +168,64 @@ class VistasIncendiosTests(SimpleTestCase):
         self.assertEqual(respuesta.status_code, 200)
         for ruta in ("dashboard", "causas", "coincidencias", "vegetacion"):
             self.assertContains(respuesta, f'href="{reverse(ruta)}"')
+
+    def test_dashboard_suma_superficie_con_decimal(self):
+        respuesta = self.client.get(reverse("dashboard"))
+        self.assertEqual(
+            respuesta.context["totales"]["superficie"], Decimal("12.50")
+        )
+        self.assertIsInstance(
+            respuesta.context["totales"]["superficie"], Decimal
+        )
+
+
+class FiltrosTests(SimpleTestCase):
+    """Comprueba los filtros sin realizar consultas PostgreSQL."""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.regiones = [
+            {"id_region": 7, "nombre_region": "Maule"},
+            {"id_region": 8, "nombre_region": "Biobío"},
+        ]
+
+    def test_filtros_vacios(self):
+        request = self.factory.get("/")
+        self.assertEqual(
+            validar_filtros(request, self.regiones), (None, None)
+        )
+
+    def test_region_y_temporada_validas(self):
+        request = self.factory.get("/causas/", {
+            "region": "7", "temporada": "2016"
+        })
+        self.assertEqual(
+            validar_filtros(request, self.regiones), (7, 2016)
+        )
+
+    def test_region_no_existente(self):
+        request = self.factory.get("/causas/", {"region": "999"})
+        with self.assertRaises(FiltroInvalido):
+            validar_filtros(request, self.regiones)
+
+    def test_temporada_fuera_del_rango(self):
+        request = self.factory.get("/causas/", {"temporada": "2028"})
+        with self.assertRaises(FiltroInvalido):
+            validar_filtros(request, self.regiones)
+
+    def test_dashboard_ignora_temporada(self):
+        request = self.factory.get("/", {
+            "region": "8", "temporada": "2028"
+        })
+        self.assertEqual(
+            validar_filtros(
+                request, self.regiones, incluir_temporada=False
+            ),
+            (8, None),
+        )
+
+    def test_opciones_temporadas(self):
+        opciones = opciones_temporadas()
+        self.assertEqual(len(opciones), 5)
+        self.assertEqual(opciones[0]["nombre"], "2014-2015")
+        self.assertEqual(opciones[-1]["nombre"], "2018-2019")
