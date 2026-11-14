@@ -1,141 +1,132 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="es">
+{% extends "incendios/base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block titulo_documento %}NASA–CONAF | Incendios Forestales{% endblock %}
+{% block titulo_encabezado %}Incendios Forestales en Chile{% endblock %}
+{% block descripcion_encabezado %}Estadísticas CONAF y detecciones satelitales NASA FIRMS{% endblock %}
 
-    <title>NASA–CONAF | Incendios Forestales</title>
+{% block encabezado_extra %}
+    <p>Temporadas 2014–2015 a 2018–2019</p>
+{% endblock %}
 
-    <link rel="stylesheet" href="{% static 'incendios/estilos.css' %}">
+{% block contenido %}
+    <section class="panel">
+        <h2>Explorar datos</h2>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-</head>
+        <form method="get">
+            <label for="region">Región:</label>
 
-<body>
-    <header>
-        <h1>Incendios Forestales en Chile</h1>
-        <p>Estadísticas CONAF y detecciones satelitales NASA FIRMS</p>
-        <p>Temporadas 2014–2015 a 2018–2019</p>
-    </header>
+            <select name="region" id="region">
+                <option value="">Todas las regiones</option>
 
-    {% include "incendios/_navegacion.html" %}
+                {% for region in regiones %}
+                    {% if region.id_region == region_seleccionada %}
+                        <option value="{{ region.id_region }}" selected>
+                            {{ region.nombre_region }}
+                        </option>
+                    {% else %}
+                        <option value="{{ region.id_region }}">
+                            {{ region.nombre_region }}
+                        </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
 
-    <main>
-        <section class="panel">
-            <h2>Explorar datos</h2>
+            <button type="submit">Aplicar filtro</button>
+        </form>
+    </section>
 
-            <form method="get">
-                <label for="region">Región:</label>
+    <section class="indicadores">
+        <article class="indicador">
+            <h3>Incendios registrados</h3>
+            <p>{{ totales.incendios }}</p>
+        </article>
 
-                <select name="region" id="region">
-                    <option value="">Todas las regiones</option>
+        <article class="indicador">
+            <h3>Superficie afectada</h3>
+            <p>{{ totales.superficie|floatformat:2 }} ha</p>
+        </article>
 
-                    {% for region in regiones %}
-                    <option value="{{ region.id_region }}" {% if region.id_region == region_seleccionada %}selected{% endif %}>
-                        {{ region.nombre_region }}
-                    </option>
+        <article class="indicador">
+            <h3>Focos detectados</h3>
+            <p>{{ totales.focos }}</p>
+        </article>
+    </section>
+
+    <section class="panel">
+        <h2>Superficie quemada por temporada</h2>
+
+        <div class="grafico">
+            <canvas id="graficoSuperficie"></canvas>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Evolución de los incendios</h2>
+
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Temporada</th>
+                        <th>Incendios</th>
+                        <th>Superficie (ha)</th>
+                        <th>Focos NASA</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for temporada in temporadas %}
+                    <tr>
+                        <td>{{ temporada.nombre }}</td>
+                        <td>{{ temporada.incendios }}</td>
+                        <td>{{ temporada.superficie|floatformat:2 }}</td>
+                        <td>{{ temporada.focos }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">
+                            No hay datos disponibles para los filtros seleccionados.
+                        </td>
+                    </tr>
                     {% endfor %}
-                </select>
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}
 
-                <button type="submit">Aplicar filtro</button>
-            </form>
-        </section>
+{% block scripts %}
+{{ grafico|json_script:"datos-grafico" }}
 
-        <section class="indicadores">
-            <article class="indicador">
-                <h3>Incendios registrados</h3>
-                <p>{{ totales.incendios }}</p>
-            </article>
+<script>
+    const datos = JSON.parse(
+        document.getElementById("datos-grafico").textContent
+    );
 
-            <article class="indicador">
-                <h3>Superficie afectada</h3>
-                <p>{{ totales.superficie|floatformat:2 }} ha</p>
-            </article>
+    const canvas = document.getElementById("graficoSuperficie");
 
-            <article class="indicador">
-                <h3>Focos detectados</h3>
-                <p>{{ totales.focos }}</p>
-            </article>
-        </section>
-
-        <section class="panel">
-            <h2>Superficie quemada por temporada</h2>
-
-            <div class="grafico">
-                <canvas id="graficoSuperficie"></canvas>
-            </div>
-        </section>
-
-        <section class="panel">
-            <h2>Evolución de los incendios</h2>
-
-            <div class="tabla-contenedor">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Temporada</th>
-                            <th>Incendios</th>
-                            <th>Superficie (ha)</th>
-                            <th>Focos NASA</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for temporada in temporadas %}
-                        <tr>
-                            <td>{{ temporada.nombre }}</td>
-                            <td>{{ temporada.incendios }}</td>
-                            <td>{{ temporada.superficie|floatformat:2 }}</td>
-                            <td>{{ temporada.focos }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4">
-                                No hay datos disponibles para los filtros seleccionados.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-
-    {{ grafico|json_script:"datos-grafico" }}
-
-    <script>
-        const datos = JSON.parse(
-            document.getElementById("datos-grafico").textContent
-        );
-
-        const canvas = document.getElementById("graficoSuperficie");
-
-        new Chart(canvas, {
-            type: "bar",
-            data: {
-                labels: datos.etiquetas,
-                datasets: [
-                    {
-                        label: "Superficie quemada (ha)",
-                        data: datos.superficie,
-                        backgroundColor: "#e97646",
-                        borderRadius: 5
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+    new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: datos.etiquetas,
+            datasets: [
+                {
+                    label: "Superficie quemada (ha)",
+                    data: datos.superficie,
+                    backgroundColor: "#e97646",
+                    borderRadius: 5
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
-    </script>
-</body>
-
-</html>
+        }
+    });
+</script>
+{% endblock %}

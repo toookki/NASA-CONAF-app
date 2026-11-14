@@ -1,215 +1,155 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="es">
+{% extends "incendios/base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block titulo_documento %}NASA–CONAF | Coincidencias satelitales{% endblock %}
+{% block titulo_encabezado %}Coincidencias NASA–CONAF{% endblock %}
+{% block descripcion_encabezado %}Asociación entre incendios registrados y focos de calor satelitales{% endblock %}
 
-    <title>NASA–CONAF | Coincidencias satelitales</title>
+{% block contenido %}
+{% include "incendios/_filtros.html" %}
 
-    <link rel="stylesheet" href="{% static 'incendios/estilos.css' %}">
+    <section class="indicadores indicadores-cuatro">
+        <article class="indicador">
+            <h3>Incendios con coincidencia</h3>
+            <p>{{ resumen.coincidentes }}</p>
+        </article>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-</head>
+        <article class="indicador">
+            <h3>Porcentaje de incendios</h3>
+            <p>{{ resumen.porcentaje|floatformat:2 }} %</p>
+        </article>
 
-<body>
-    <header>
-        <h1>Coincidencias NASA–CONAF</h1>
-        <p>Asociación entre incendios registrados y focos de calor satelitales</p>
-    </header>
+        <article class="indicador">
+            <h3>Vínculos NASA–CONAF</h3>
+            <p>{{ resumen.vinculos }}</p>
+        </article>
 
-    {% include "incendios/_navegacion.html" %}
+        <article class="indicador">
+            <h3>Focos únicos asociados</h3>
+            <p>{{ resumen.focos_unicos }}</p>
+        </article>
+    </section>
 
-    <main>
-        <section class="panel">
-            <h2>Filtros de análisis</h2>
+    <section class="panel">
+        <h2>Incendios con y sin coincidencia</h2>
 
-            <form method="get">
-                <label for="region">Región:</label>
+        <p>
+            Comparación por temporada de los incendios CONAF
+            que tienen al menos un foco NASA asociado.
+        </p>
 
-                <select name="region" id="region">
-                    <option value="">Todas las regiones</option>
+        <div class="grafico">
+            <canvas id="graficoCoincidencias"></canvas>
+        </div>
+    </section>
 
-                    {% for region in regiones %}
-                        {% if region.id_region == region_seleccionada %}
-                            <option value="{{ region.id_region }}" selected>
-                                {{ region.nombre_region }}
-                            </option>
-                        {% else %}
-                            <option value="{{ region.id_region }}">
-                                {{ region.nombre_region }}
-                            </option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
+    <section class="panel">
+        <h2>Detalle por temporada</h2>
 
-                <label for="temporada">Temporada:</label>
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Temporada</th>
+                        <th>Total incendios</th>
+                        <th>Con coincidencia</th>
+                        <th>Sin coincidencia</th>
+                        <th>Coincidencia (%)</th>
+                        <th>Vínculos</th>
+                        <th>Focos únicos</th>
+                    </tr>
+                </thead>
 
-                <select name="temporada" id="temporada">
-                    <option value="">Todas las temporadas</option>
-
-                    {% for temporada in temporadas %}
-                        {% if temporada.inicio == temporada_seleccionada %}
-                            <option value="{{ temporada.inicio }}" selected>
-                                {{ temporada.nombre }}
-                            </option>
-                        {% else %}
-                            <option value="{{ temporada.inicio }}">
-                                {{ temporada.nombre }}
-                            </option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
-
-                <button type="submit">Aplicar filtros</button>
-            </form>
-        </section>
-
-        <section class="indicadores indicadores-cuatro">
-            <article class="indicador">
-                <h3>Incendios con coincidencia</h3>
-                <p>{{ resumen.coincidentes }}</p>
-            </article>
-
-            <article class="indicador">
-                <h3>Porcentaje de incendios</h3>
-                <p>{{ resumen.porcentaje|floatformat:2 }} %</p>
-            </article>
-
-            <article class="indicador">
-                <h3>Vínculos NASA–CONAF</h3>
-                <p>{{ resumen.vinculos }}</p>
-            </article>
-
-            <article class="indicador">
-                <h3>Focos únicos asociados</h3>
-                <p>{{ resumen.focos_unicos }}</p>
-            </article>
-        </section>
-
-        <section class="panel">
-            <h2>Incendios con y sin coincidencia</h2>
-
-            <p>
-                Comparación por temporada de los incendios CONAF
-                que tienen al menos un foco NASA asociado.
-            </p>
-
-            <div class="grafico">
-                <canvas id="graficoCoincidencias"></canvas>
-            </div>
-        </section>
-
-        <section class="panel">
-            <h2>Detalle por temporada</h2>
-
-            <div class="tabla-contenedor">
-                <table>
-                    <thead>
+                <tbody>
+                    {% for fila in datos %}
                         <tr>
-                            <th>Temporada</th>
-                            <th>Total incendios</th>
-                            <th>Con coincidencia</th>
-                            <th>Sin coincidencia</th>
-                            <th>Coincidencia (%)</th>
-                            <th>Vínculos</th>
-                            <th>Focos únicos</th>
+                            <td>{{ fila.temporada }}</td>
+                            <td>{{ fila.incendios }}</td>
+                            <td>{{ fila.coincidentes }}</td>
+                            <td>{{ fila.sin_coincidencia }}</td>
+                            <td>{{ fila.porcentaje|floatformat:2 }}</td>
+                            <td>{{ fila.vinculos }}</td>
+                            <td>{{ fila.focos_unicos }}</td>
                         </tr>
-                    </thead>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7">
+                                No existen resultados para los filtros.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-                    <tbody>
-                        {% for fila in datos %}
-                            <tr>
-                                <td>{{ fila.temporada }}</td>
-                                <td>{{ fila.incendios }}</td>
-                                <td>{{ fila.coincidentes }}</td>
-                                <td>{{ fila.sin_coincidencia }}</td>
-                                <td>{{ fila.porcentaje|floatformat:2 }}</td>
-                                <td>{{ fila.vinculos }}</td>
-                                <td>{{ fila.focos_unicos }}</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7">
-                                    No existen resultados para los filtros.
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+    <section class="panel">
+        <h2>Interpretación de los resultados</h2>
 
-        <section class="panel">
-            <h2>Interpretación de los resultados</h2>
+        <p>
+            Un incendio se considera coincidente cuando existe
+            al menos una relación registrada en la tabla
+            coincide entre ese incendio CONAF y un foco NASA.
+        </p>
 
-            <p>
-                Un incendio se considera coincidente cuando existe
-                al menos una relación registrada en la tabla
-                coincide entre ese incendio CONAF y un foco NASA.
-            </p>
+        <p>
+            Un incendio puede tener varios focos asociados.
+            Asimismo, un mismo foco puede estar vinculado a
+            más de un incendio. Por eso se distinguen incendios,
+            vínculos y focos únicos.
+        </p>
 
-            <p>
-                Un incendio puede tener varios focos asociados.
-                Asimismo, un mismo foco puede estar vinculado a
-                más de un incendio. Por eso se distinguen incendios,
-                vínculos y focos únicos.
-            </p>
+        <p>
+            Los filtros territoriales y temporales se aplican
+            sobre los registros CONAF. Las coincidencias no
+            constituyen por sí solas una validación independiente
+            de la detección satelital.
+        </p>
+    </section>
+{% endblock %}
 
-            <p>
-                Los filtros territoriales y temporales se aplican
-                sobre los registros CONAF. Las coincidencias no
-                constituyen por sí solas una validación independiente
-                de la detección satelital.
-            </p>
-        </section>
-    </main>
+{% block scripts %}
+{{ grafico|json_script:"datos-coincidencias" }}
 
-    {{ grafico|json_script:"datos-coincidencias" }}
+<script>
+    const datos = JSON.parse(
+        document.getElementById("datos-coincidencias").textContent
+    );
 
-    <script>
-        const datos = JSON.parse(
-            document.getElementById("datos-coincidencias").textContent
-        );
-
-        new Chart(
-            document.getElementById("graficoCoincidencias"),
-            {
-                type: "bar",
-                data: {
-                    labels: datos.etiquetas,
-                    datasets: [
-                        {
-                            label: "Con coincidencia",
-                            data: datos.coincidentes,
-                            backgroundColor: "#e97646",
-                            borderRadius: 4
-                        },
-                        {
-                            label: "Sin coincidencia",
-                            data: datos.sin_coincidencia,
-                            backgroundColor: "#176b83",
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            stacked: true
-                        },
-                        y: {
-                            stacked: true,
-                            beginAtZero: true
-                        }
+    new Chart(
+        document.getElementById("graficoCoincidencias"),
+        {
+            type: "bar",
+            data: {
+                labels: datos.etiquetas,
+                datasets: [
+                    {
+                        label: "Con coincidencia",
+                        data: datos.coincidentes,
+                        backgroundColor: "#e97646",
+                        borderRadius: 4
+                    },
+                    {
+                        label: "Sin coincidencia",
+                        data: datos.sin_coincidencia,
+                        backgroundColor: "#176b83",
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true
                     }
                 }
             }
-        );
-    </script>
-</body>
-
-</html>
+        }
+    );
+</script>
+{% endblock %}

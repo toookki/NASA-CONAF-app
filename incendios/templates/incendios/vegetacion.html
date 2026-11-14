@@ -1,202 +1,142 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="es">
+{% extends "incendios/base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block titulo_documento %}NASA–CONAF | Vegetación afectada{% endblock %}
+{% block titulo_encabezado %}Vegetación afectada por incendios forestales{% endblock %}
+{% block descripcion_encabezado %}Análisis de superficie quemada según tipo de vegetación{% endblock %}
 
-    <title>NASA–CONAF | Vegetación afectada</title>
+{% block contenido %}
+{% include "incendios/_filtros.html" %}
 
-    <link rel="stylesheet" href="{% static 'incendios/estilos.css' %}">
+    <section class="indicadores indicadores-cuatro">
+        <article class="indicador">
+            <h3>Superficie de vegetación quemada</h3>
+            <p>{{ resumen.superficie|floatformat:2 }} ha</p>
+        </article>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-</head>
+        <article class="indicador">
+            <h3>Incendios con vegetación registrada</h3>
+            <p>{{ resumen.incendios }}</p>
+        </article>
 
-<body>
-    <header>
-        <h1>Vegetación afectada por incendios forestales</h1>
-        <p>Análisis de superficie quemada según tipo de vegetación</p>
-    </header>
+        <article class="indicador">
+            <h3>Registros de afectación</h3>
+            <p>{{ resumen.registros }}</p>
+        </article>
 
-    {% include "incendios/_navegacion.html" %}
+        <article class="indicador">
+            <h3>Tipos de vegetación</h3>
+            <p>{{ resumen.tipos }}</p>
+        </article>
+    </section>
 
-    <main>
-        <section class="panel">
-            <h2>Filtros de análisis</h2>
+    <section class="panel">
+        <h2>Superficie quemada por tipo de vegetación</h2>
 
-            <form method="get">
-                <label for="region">Región:</label>
+        <p>
+            Distribución de la superficie afectada en los
+            diferentes tipos de vegetación registrados.
+        </p>
 
-                <select name="region" id="region">
-                    <option value="">Todas las regiones</option>
+        <div class="grafico grafico-alto">
+            <canvas id="graficoVegetacion"></canvas>
+        </div>
+    </section>
 
-                    {% for region in regiones %}
-                        {% if region.id_region == region_seleccionada %}
-                            <option value="{{ region.id_region }}" selected>
-                                {{ region.nombre_region }}
-                            </option>
-                        {% else %}
-                            <option value="{{ region.id_region }}">
-                                {{ region.nombre_region }}
-                            </option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
+    <section class="panel">
+        <h2>Detalle por tipo de vegetación</h2>
 
-                <label for="temporada">Temporada:</label>
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tipo de vegetación</th>
+                        <th>Incendios asociados</th>
+                        <th>Registros</th>
+                        <th>Superficie (ha)</th>
+                        <th>Participación (%)</th>
+                    </tr>
+                </thead>
 
-                <select name="temporada" id="temporada">
-                    <option value="">Todas las temporadas</option>
-
-                    {% for temporada in temporadas %}
-                        {% if temporada.inicio == temporada_seleccionada %}
-                            <option value="{{ temporada.inicio }}" selected>
-                                {{ temporada.nombre }}
-                            </option>
-                        {% else %}
-                            <option value="{{ temporada.inicio }}">
-                                {{ temporada.nombre }}
-                            </option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
-
-                <button type="submit">Aplicar filtros</button>
-            </form>
-        </section>
-
-        <section class="indicadores indicadores-cuatro">
-            <article class="indicador">
-                <h3>Superficie de vegetación quemada</h3>
-                <p>{{ resumen.superficie|floatformat:2 }} ha</p>
-            </article>
-
-            <article class="indicador">
-                <h3>Incendios con vegetación registrada</h3>
-                <p>{{ resumen.incendios }}</p>
-            </article>
-
-            <article class="indicador">
-                <h3>Registros de afectación</h3>
-                <p>{{ resumen.registros }}</p>
-            </article>
-
-            <article class="indicador">
-                <h3>Tipos de vegetación</h3>
-                <p>{{ resumen.tipos }}</p>
-            </article>
-        </section>
-
-        <section class="panel">
-            <h2>Superficie quemada por tipo de vegetación</h2>
-
-            <p>
-                Distribución de la superficie afectada en los
-                diferentes tipos de vegetación registrados.
-            </p>
-
-            <div class="grafico grafico-alto">
-                <canvas id="graficoVegetacion"></canvas>
-            </div>
-        </section>
-
-        <section class="panel">
-            <h2>Detalle por tipo de vegetación</h2>
-
-            <div class="tabla-contenedor">
-                <table>
-                    <thead>
+                <tbody>
+                    {% for fila in datos %}
                         <tr>
-                            <th>Tipo de vegetación</th>
-                            <th>Incendios asociados</th>
-                            <th>Registros</th>
-                            <th>Superficie (ha)</th>
-                            <th>Participación (%)</th>
+                            <td>{{ fila.tipo }}</td>
+                            <td>{{ fila.incendios }}</td>
+                            <td>{{ fila.registros }}</td>
+                            <td>
+                                {{ fila.superficie|floatformat:2 }}
+                            </td>
+                            <td>
+                                {{ fila.porcentaje|floatformat:2 }}
+                            </td>
                         </tr>
-                    </thead>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                No existen registros para los filtros.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-                    <tbody>
-                        {% for fila in datos %}
-                            <tr>
-                                <td>{{ fila.tipo }}</td>
-                                <td>{{ fila.incendios }}</td>
-                                <td>{{ fila.registros }}</td>
-                                <td>
-                                    {{ fila.superficie|floatformat:2 }}
-                                </td>
-                                <td>
-                                    {{ fila.porcentaje|floatformat:2 }}
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="5">
-                                    No existen registros para los filtros.
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+    <section class="panel">
+        <h2>Interpretación</h2>
 
-        <section class="panel">
-            <h2>Interpretación</h2>
+        <p>
+            La superficie corresponde a los valores registrados
+            en la tabla de afectación por tipo de vegetación.
+        </p>
 
-            <p>
-                La superficie corresponde a los valores registrados
-                en la tabla de afectación por tipo de vegetación.
-            </p>
+        <p>
+            Un mismo incendio puede afectar varios tipos de
+            vegetación. Por lo tanto, la suma de los incendios
+            asociados a cada categoría puede superar el total
+            de incendios distintos.
+        </p>
 
-            <p>
-                Un mismo incendio puede afectar varios tipos de
-                vegetación. Por lo tanto, la suma de los incendios
-                asociados a cada categoría puede superar el total
-                de incendios distintos.
-            </p>
+        <p>
+            Los porcentajes representan la participación de
+            cada categoría en la superficie de vegetación
+            registrada para los filtros seleccionados.
+        </p>
+    </section>
+{% endblock %}
 
-            <p>
-                Los porcentajes representan la participación de
-                cada categoría en la superficie de vegetación
-                registrada para los filtros seleccionados.
-            </p>
-        </section>
-    </main>
+{% block scripts %}
+{{ grafico|json_script:"datos-vegetacion" }}
 
-    {{ grafico|json_script:"datos-vegetacion" }}
+<script>
+    const datos = JSON.parse(
+        document.getElementById("datos-vegetacion").textContent
+    );
 
-    <script>
-        const datos = JSON.parse(
-            document.getElementById("datos-vegetacion").textContent
-        );
-
-        new Chart(
-            document.getElementById("graficoVegetacion"),
-            {
-                type: "bar",
-                data: {
-                    labels: datos.etiquetas,
-                    datasets: [{
-                        label: "Superficie quemada (ha)",
-                        data: datos.superficies,
-                        backgroundColor: "#e97646",
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    indexAxis: "y",
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true
-                        }
+    new Chart(
+        document.getElementById("graficoVegetacion"),
+        {
+            type: "bar",
+            data: {
+                labels: datos.etiquetas,
+                datasets: [{
+                    label: "Superficie quemada (ha)",
+                    data: datos.superficies,
+                    backgroundColor: "#e97646",
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true
                     }
                 }
             }
-        );
-    </script>
-</body>
-
-</html>
+        }
+    );
+</script>
+{% endblock %}

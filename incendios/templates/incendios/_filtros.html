@@ -1,0 +1,43 @@
+<section class="panel">
+    <h2>Filtros de análisis</h2>
+
+    <form method="get">
+        <label for="region">Región:</label>
+
+        <select name="region" id="region">
+            <option value="">Todas las regiones</option>
+
+            {% for region in regiones %}
+                {% if region.id_region == region_seleccionada %}
+                    <option value="{{ region.id_region }}" selected>
+                        {{ region.nombre_region }}
+                    </option>
+                {% else %}
+                    <option value="{{ region.id_region }}">
+                        {{ region.nombre_region }}
+                    </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+
+        <label for="temporada">Temporada:</label>
+
+        <select name="temporada" id="temporada">
+            <option value="">Todas las temporadas</option>
+
+            {% for temporada in temporadas %}
+                {% if temporada.inicio == temporada_seleccionada %}
+                    <option value="{{ temporada.inicio }}" selected>
+                        {{ temporada.nombre }}
+                    </option>
+                {% else %}
+                    <option value="{{ temporada.inicio }}">
+                        {{ temporada.nombre }}
+                    </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+
+        <button type="submit">Aplicar filtros</button>
+    </form>
+</section>
