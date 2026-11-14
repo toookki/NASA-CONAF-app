@@ -252,3 +252,12 @@ tbody tr:hover {
         height: 260px;
     }
 }
+
+
+/* ==========================================
+   9. Gráfico de vegetación
+   ========================================== */
+
+.grafico.grafico-alto {
+    height: 480px;
+}

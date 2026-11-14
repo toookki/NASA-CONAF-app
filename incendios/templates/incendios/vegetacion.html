@@ -1,0 +1,206 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NASA–CONAF | Vegetación afectada</title>
+
+    <link rel="stylesheet" href="{% static 'incendios/estilos.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <h1>Vegetación afectada por incendios forestales</h1>
+        <p>Análisis de superficie quemada según tipo de vegetación</p>
+
+        <p>
+            <a href="{% url 'dashboard' %}">
+                Volver al dashboard
+            </a>
+        </p>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2>Filtros de análisis</h2>
+
+            <form method="get">
+                <label for="region">Región:</label>
+
+                <select name="region" id="region">
+                    <option value="">Todas las regiones</option>
+
+                    {% for region in regiones %}
+                        {% if region.id_region == region_seleccionada %}
+                            <option value="{{ region.id_region }}" selected>
+                                {{ region.nombre_region }}
+                            </option>
+                        {% else %}
+                            <option value="{{ region.id_region }}">
+                                {{ region.nombre_region }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                <label for="temporada">Temporada:</label>
+
+                <select name="temporada" id="temporada">
+                    <option value="">Todas las temporadas</option>
+
+                    {% for temporada in temporadas %}
+                        {% if temporada.inicio == temporada_seleccionada %}
+                            <option value="{{ temporada.inicio }}" selected>
+                                {{ temporada.nombre }}
+                            </option>
+                        {% else %}
+                            <option value="{{ temporada.inicio }}">
+                                {{ temporada.nombre }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                <button type="submit">Aplicar filtros</button>
+            </form>
+        </section>
+
+        <section class="indicadores indicadores-cuatro">
+            <article class="indicador">
+                <h3>Superficie de vegetación quemada</h3>
+                <p>{{ resumen.superficie|floatformat:2 }} ha</p>
+            </article>
+
+            <article class="indicador">
+                <h3>Incendios con vegetación registrada</h3>
+                <p>{{ resumen.incendios }}</p>
+            </article>
+
+            <article class="indicador">
+                <h3>Registros de afectación</h3>
+                <p>{{ resumen.registros }}</p>
+            </article>
+
+            <article class="indicador">
+                <h3>Tipos de vegetación</h3>
+                <p>{{ resumen.tipos }}</p>
+            </article>
+        </section>
+
+        <section class="panel">
+            <h2>Superficie quemada por tipo de vegetación</h2>
+
+            <p>
+                Distribución de la superficie afectada en los
+                diferentes tipos de vegetación registrados.
+            </p>
+
+            <div class="grafico grafico-alto">
+                <canvas id="graficoVegetacion"></canvas>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Detalle por tipo de vegetación</h2>
+
+            <div class="tabla-contenedor">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tipo de vegetación</th>
+                            <th>Incendios asociados</th>
+                            <th>Registros</th>
+                            <th>Superficie (ha)</th>
+                            <th>Participación (%)</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for fila in datos %}
+                            <tr>
+                                <td>{{ fila.tipo }}</td>
+                                <td>{{ fila.incendios }}</td>
+                                <td>{{ fila.registros }}</td>
+                                <td>
+                                    {{ fila.superficie|floatformat:2 }}
+                                </td>
+                                <td>
+                                    {{ fila.porcentaje|floatformat:2 }}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5">
+                                    No existen registros para los filtros.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Interpretación</h2>
+
+            <p>
+                La superficie corresponde a los valores registrados
+                en la tabla de afectación por tipo de vegetación.
+            </p>
+
+            <p>
+                Un mismo incendio puede afectar varios tipos de
+                vegetación. Por lo tanto, la suma de los incendios
+                asociados a cada categoría puede superar el total
+                de incendios distintos.
+            </p>
+
+            <p>
+                Los porcentajes representan la participación de
+                cada categoría en la superficie de vegetación
+                registrada para los filtros seleccionados.
+            </p>
+        </section>
+    </main>
+
+    {{ grafico|json_script:"datos-vegetacion" }}
+
+    <script>
+        const datos = JSON.parse(
+            document.getElementById("datos-vegetacion").textContent
+        );
+
+        new Chart(
+            document.getElementById("graficoVegetacion"),
+            {
+                type: "bar",
+                data: {
+                    labels: datos.etiquetas,
+                    datasets: [{
+                        label: "Superficie quemada (ha)",
+                        data: datos.superficies,
+                        backgroundColor: "#e97646",
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        );
+    </script>
+</body>
+
+</html>

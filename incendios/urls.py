@@ -10,4 +10,5 @@ urlpatterns = [
         views.coincidencias,
         name="coincidencias",
     ),
+    path("vegetacion/", views.vegetacion, name="vegetacion"),
 ]

@@ -6,6 +6,7 @@ from .consultas import (
     obtener_coincidencias,
     obtener_evolucion,
     obtener_regiones,
+    obtener_vegetacion,
 )
 
 def dashboard(request):
@@ -195,5 +196,78 @@ def coincidencias(request):
     return render(
         request,
         "incendios/coincidencias.html",
+        contexto,
+    )
+
+def vegetacion(request):
+    """Muestra el análisis de vegetación afectada."""
+    regiones = obtener_regiones()
+
+    region_param = request.GET.get("region", "")
+    temporada_param = request.GET.get("temporada", "")
+
+    ids_validos = {str(r["id_region"]) for r in regiones}
+    anios_validos = {str(anio) for anio in range(2014, 2019)}
+
+    if region_param and region_param not in ids_validos:
+        return HttpResponseBadRequest("Región no válida.")
+
+    if temporada_param and temporada_param not in anios_validos:
+        return HttpResponseBadRequest("Temporada no válida.")
+
+    region_id = int(region_param) if region_param else None
+    temporada = int(temporada_param) if temporada_param else None
+
+    resultados = obtener_vegetacion(region_id, temporada)
+
+    datos = [
+        {
+            "tipo": fila["tipo_nombre"],
+            "incendios": fila["incendios_asociados"],
+            "registros": fila["registros_afectacion"],
+            "superficie": fila["superficie_ha"],
+            "porcentaje": fila["porcentaje_superficie"],
+        }
+        for fila in resultados
+    ]
+
+    resumen = {
+        "superficie": sum(f["superficie"] for f in datos),
+        "incendios": (
+            resultados[0]["incendios_con_vegetacion"]
+            if resultados else 0
+        ),
+        "registros": sum(f["registros"] for f in datos),
+        "tipos": len(datos),
+    }
+
+    grafico = {
+        "etiquetas": [f["tipo"] for f in datos],
+        "superficies": [
+            float(f["superficie"]) for f in datos
+        ],
+    }
+
+    temporadas = [
+        {
+            "inicio": anio,
+            "nombre": f"{anio}-{anio + 1}",
+        }
+        for anio in range(2014, 2019)
+    ]
+
+    contexto = {
+        "regiones": regiones,
+        "region_seleccionada": region_id,
+        "temporada_seleccionada": temporada,
+        "temporadas": temporadas,
+        "datos": datos,
+        "resumen": resumen,
+        "grafico": grafico,
+    }
+
+    return render(
+        request,
+        "incendios/vegetacion.html",
         contexto,
     )

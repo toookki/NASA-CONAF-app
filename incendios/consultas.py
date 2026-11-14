@@ -217,3 +217,82 @@ def obtener_coincidencias(region_id=None, temporada=None):
     """
 
     return ejecutar_consulta(sql, parametros)
+
+def obtener_vegetacion(region_id=None, temporada=None):
+    """Resume la superficie quemada por tipo de vegetación."""
+    from datetime import date
+
+    condiciones = []
+    parametros = []
+
+    if region_id is not None:
+        condiciones.append("p.id_region = %s")
+        parametros.append(region_id)
+
+    if temporada is not None:
+        condiciones.append(
+            "i.fecha >= %s AND i.fecha < %s"
+        )
+        parametros.extend([
+            date(temporada, 7, 1),
+            date(temporada + 1, 7, 1),
+        ])
+
+    filtro = (
+        "WHERE " + " AND ".join(condiciones)
+        if condiciones else ""
+    )
+
+    sql = f"""
+        WITH vegetacion_filtrada AS (
+            SELECT
+                i.id_incendio,
+                a.id_vegetacion,
+                v.tipo_nombre,
+                a.superficie_quemada_ha
+            FROM electromaquinas.incendio i
+            JOIN electromaquinas.afecta a
+                ON i.id_incendio = a.id_incendio
+            JOIN electromaquinas.tipo_vegetacion v
+                ON a.id_vegetacion = v.id_vegetacion
+            JOIN electromaquinas.comuna c
+                ON i.id_comuna = c.id_comuna
+            JOIN electromaquinas.provincia p
+                ON c.id_provincia = p.id_provincia
+            {filtro}
+        ),
+        resumen_vegetacion AS (
+            SELECT
+                id_vegetacion,
+                tipo_nombre,
+                COUNT(DISTINCT id_incendio)
+                    AS incendios_asociados,
+                COUNT(*) AS registros_afectacion,
+                SUM(superficie_quemada_ha)::numeric
+                    AS superficie_ha
+            FROM vegetacion_filtrada
+            GROUP BY id_vegetacion, tipo_nombre
+        ),
+        cobertura AS (
+            SELECT
+                COUNT(DISTINCT id_incendio)
+                    AS incendios_con_vegetacion
+            FROM vegetacion_filtrada
+        )
+        SELECT
+            r.tipo_nombre,
+            r.incendios_asociados,
+            r.registros_afectacion,
+            r.superficie_ha,
+            c.incendios_con_vegetacion,
+            ROUND(
+                100.0 * r.superficie_ha
+                / NULLIF(SUM(r.superficie_ha) OVER (), 0),
+                2
+            ) AS porcentaje_superficie
+        FROM resumen_vegetacion r
+        CROSS JOIN cobertura c
+        ORDER BY r.superficie_ha DESC, r.tipo_nombre;
+    """
+
+    return ejecutar_consulta(sql, parametros)
