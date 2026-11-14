@@ -1,8 +1,21 @@
-venv/
+# Entorno virtual
+/venv/
+
+# Archivos temporales de Python
 __pycache__/
 *.py[cod]
-db.sqlite3
+
+# Base de datos local
+/db.sqlite3
+
+# Variables de entorno y credenciales
 .env
-staticfiles/
+
+# Archivos estáticos generados por Django
+/staticfiles/
+
+# Configuración del editor
 .vscode/
+
+# Resultados generados de mediciones SQL
 /resultados_sql/

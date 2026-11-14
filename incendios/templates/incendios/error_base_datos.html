@@ -1,0 +1,16 @@
+{% extends "incendios/base.html" %}
+
+{% block titulo_documento %}Servicio temporalmente no disponible | NASA–CONAF{% endblock %}
+{% block titulo_encabezado %}Servicio temporalmente no disponible{% endblock %}
+{% block descripcion_encabezado %}NASA–CONAF{% endblock %}
+
+{% block contenido %}
+    <section class="panel" role="alert">
+        <h2>No se pudieron obtener los datos</h2>
+        <p>
+            No fue posible consultar la base de datos en este momento.
+            Intenta actualizar la página más tarde.
+        </p>
+        <p><a href="{% url 'dashboard' %}">Volver al inicio</a></p>
+    </section>
+{% endblock %}

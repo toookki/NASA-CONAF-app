@@ -12,9 +12,11 @@ from .consultas import (
     obtener_regiones,
     obtener_vegetacion,
 )
+from .errores import manejar_errores_bd
 from .filtros import FiltroInvalido, contexto_filtros, validar_filtros
 
 
+@manejar_errores_bd
 def dashboard(request):
     """Muestra la evolución temporal de incendios y focos detectados."""
     regiones = obtener_regiones()
@@ -61,6 +63,7 @@ def dashboard(request):
     return render(request, "incendios/dashboard.html", contexto)
 
 
+@manejar_errores_bd
 def causas(request):
     """Presenta las causas CONAF por región y temporada."""
     regiones = obtener_regiones()
@@ -102,6 +105,7 @@ def causas(request):
     return render(request, "incendios/causas.html", contexto)
 
 
+@manejar_errores_bd
 def coincidencias(request):
     """Analiza relaciones registradas entre incendios y focos NASA."""
     regiones = obtener_regiones()
@@ -157,6 +161,7 @@ def coincidencias(request):
     return render(request, "incendios/coincidencias.html", contexto)
 
 
+@manejar_errores_bd
 def vegetacion(request):
     """Resume superficies de vegetación afectada por incendios CONAF."""
     regiones = obtener_regiones()

@@ -1,7 +1,14 @@
 """Pruebas de regresión de las cuatro vistas sin conexión a PostgreSQL."""
 
 from decimal import Decimal
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
+
+from django.conf import settings
+from django.core.management import call_command
+from django.db import InterfaceError, OperationalError, ProgrammingError
+from django.test import override_settings
 
 from django.test import RequestFactory, SimpleTestCase
 from django.urls import reverse
@@ -9,8 +16,8 @@ from django.urls import reverse
 from .filtros import FiltroInvalido, opciones_temporadas, validar_filtros
 
 
-class VistasIncendiosTests(SimpleTestCase):
-    """Comprueba rutas, filtros y resultados utilizando datos simulados."""
+class VistasSimuladasBase(SimpleTestCase):
+    """Datos y mocks compartidos para pruebas HTTP sin PostgreSQL."""
 
     def setUp(self):
         regiones = [
@@ -66,6 +73,9 @@ class VistasIncendiosTests(SimpleTestCase):
             )
             self.consultas[nombre] = parche.start()
             self.addCleanup(parche.stop)
+
+class VistasIncendiosTests(VistasSimuladasBase):
+    """Comprueba rutas, filtros y resultados usando datos simulados."""
 
     def test_dashboard_renderiza_y_calcula_totales(self):
         respuesta = self.client.get(reverse("dashboard"))
@@ -229,3 +239,75 @@ class FiltrosTests(SimpleTestCase):
         self.assertEqual(len(opciones), 5)
         self.assertEqual(opciones[0]["nombre"], "2014-2015")
         self.assertEqual(opciones[-1]["nombre"], "2018-2019")
+
+
+class RobustezPostgresTests(VistasSimuladasBase):
+    """Comprueba HTTP 503 cuando PostgreSQL falla, sin BD real."""
+
+    def test_conexion_fallida_devuelve_503_en_cualquier_vista(self):
+        for ruta in ("dashboard", "causas", "coincidencias", "vegetacion"):
+            with self.subTest(ruta=ruta):
+                self.consultas["obtener_regiones"].side_effect = OperationalError(
+                    "Conexión interna confidencial"
+                )
+                with self.assertLogs("incendios.errores", level="ERROR"):
+                    respuesta = self.client.get(reverse(ruta))
+                self.assertEqual(respuesta.status_code, 503)
+                self.assertTemplateUsed(respuesta, "incendios/error_base_datos.html")
+                self.assertNotIn(b"confidencial", respuesta.content.lower())
+                self.assertEqual(respuesta["Cache-Control"], "no-store")
+            self.consultas["obtener_regiones"].reset_mock(side_effect=True)
+
+    def test_timeout_sql_devuelve_503(self):
+        self.consultas["obtener_evolucion"].side_effect = OperationalError(
+            "canceling statement due to statement timeout"
+        )
+        with self.assertLogs("incendios.errores", level="ERROR"):
+            respuesta = self.client.get(reverse("dashboard"))
+        self.assertEqual(respuesta.status_code, 503)
+        self.assertContains(
+            respuesta, "No se pudieron obtener los datos", status_code=503
+        )
+
+    def test_error_de_interfaz_devuelve_503(self):
+        self.consultas["obtener_causas"].side_effect = InterfaceError(
+            "Canal cerrado"
+        )
+        with self.assertLogs("incendios.errores", level="ERROR"):
+            respuesta = self.client.get(reverse("causas"))
+        self.assertEqual(respuesta.status_code, 503)
+        self.assertNotIn(b"Canal cerrado", respuesta.content)
+
+    def test_error_de_programacion_no_se_disfraza_de_503(self):
+        self.consultas["obtener_vegetacion"].side_effect = ProgrammingError(
+            "Consulta SQL inválida"
+        )
+        with self.assertRaises(ProgrammingError):
+            self.client.get(reverse("vegetacion"))
+
+    def test_log_identifica_la_ruta_con_falla(self):
+        self.consultas["obtener_coincidencias"].side_effect = OperationalError(
+            "Sin conexión"
+        )
+        with self.assertLogs("incendios.errores", level="ERROR") as registro:
+            respuesta = self.client.get(reverse("coincidencias"))
+        self.assertEqual(respuesta.status_code, 503)
+        self.assertIn("/coincidencias/", registro.output[0])
+
+
+class ConfiguracionTests(SimpleTestCase):
+    """Verifica la configuración desplegable sin usar PostgreSQL."""
+
+    def test_timeouts_positivos_y_sin_conexiones_persistentes(self):
+        configuracion = settings.DATABASES["incendios"]
+        opciones = configuracion["OPTIONS"]
+        self.assertGreater(opciones["connect_timeout"], 0)
+        self.assertIn("statement_timeout=", opciones["options"])
+        self.assertEqual(configuracion["CONN_MAX_AGE"], 0)
+
+    def test_directorio_de_static_collectstatic(self):
+        with TemporaryDirectory() as destino:
+            with override_settings(STATIC_ROOT=destino):
+                call_command("collectstatic", interactive=False, verbosity=0)
+                archivo_css = Path(destino) / "incendios" / "estilos.css"
+                self.assertTrue(archivo_css.is_file())

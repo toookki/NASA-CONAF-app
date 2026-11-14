@@ -31,7 +31,31 @@ if not SECRET_KEY:
     raise RuntimeError("Falta DJANGO_SECRET_KEY: crea .env a partir de .env.example")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "False").strip().lower() in {"1", "true", "yes", "on"}
+def variable_booleana(nombre, defecto=False):
+    """Lee variables booleanas sin aceptar silenciosamente valores dudosos."""
+    valor = os.getenv(nombre)
+    if valor is None:
+        return defecto
+    normalizado = valor.strip().lower()
+    if normalizado in {"1", "true", "yes", "on"}:
+        return True
+    if normalizado in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"Valor booleano no válido en {nombre}.")
+
+
+def entero_positivo(nombre, defecto):
+    """Exige un entero positivo para límites de conexión y consultas."""
+    try:
+        valor = int(os.getenv(nombre, str(defecto)))
+    except ValueError as error:
+        raise ValueError(f"{nombre} debe ser un entero positivo.") from error
+    if valor <= 0:
+        raise ValueError(f"{nombre} debe ser un entero positivo.")
+    return valor
+
+
+DEBUG = variable_booleana("DJANGO_DEBUG", False)
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -97,6 +121,21 @@ DATABASES = {
         "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
         "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
         "PORT": os.getenv("POSTGRES_PORT", "5540"),
+        # Evita esperas excesivas si el túnel SSH o PostgreSQL no responden.
+        # connect_timeout limita la apertura de la conexión (segundos).
+        # statement_timeout limita CADA instrucción SQL (milisegundos).
+        "OPTIONS": {
+            "connect_timeout": entero_positivo(
+                "POSTGRES_CONNECT_TIMEOUT", 5
+            ),
+            "options": (
+                "-c statement_timeout="
+                f"{entero_positivo('POSTGRES_STATEMENT_TIMEOUT_MS', 15000)}"
+            ),
+        },
+        # Una conexión por solicitud; no dejar sesiones persistentes en
+        # el servidor compartido del curso.
+        "CONN_MAX_AGE": 0,
     },
 }
 
@@ -135,7 +174,45 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# HTTPS se activa exclusivamente cuando el hosting tenga TLS configurado.
+# En un proxy inverso, comprobar primero que Django reconoce HTTPS y que
+# las cabeceras de proxy provienen de un servidor de confianza.
+HTTPS_HABILITADO = variable_booleana("DJANGO_HTTPS_ENABLED", False)
+SECURE_SSL_REDIRECT = HTTPS_HABILITADO and variable_booleana(
+    "DJANGO_FORCE_HTTPS_REDIRECT", False
+)
+CSRF_COOKIE_SECURE = HTTPS_HABILITADO
+SESSION_COOKIE_SECURE = HTTPS_HABILITADO
+SECURE_HSTS_SECONDS = (
+    entero_positivo("DJANGO_HSTS_SECONDS", 1)
+    if HTTPS_HABILITADO and os.getenv("DJANGO_HSTS_SECONDS", "0") != "0"
+    else 0
+)
+CSRF_TRUSTED_ORIGINS = [
+    origen.strip()
+    for origen in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origen.strip()
+]
+
+# Registro de errores de acceso a datos en consola/terminal del servidor.
+# No se escriben claves ni archivos de logs en el repositorio.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "incendios": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        }
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
