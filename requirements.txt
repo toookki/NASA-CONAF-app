@@ -1,0 +1,4 @@
+# Dependencias directas probadas en Windows con Python 3.13.13
+Django==5.2.19
+psycopg[binary]==3.3.9
+python-dotenv==1.2.4
