@@ -13,10 +13,19 @@
 </head>
 
 <body>
+
     <header>
-        <h1>{% block titulo_encabezado %}{% endblock %}</h1>
-        <p>{% block descripcion_encabezado %}{% endblock %}</p>
-        {% block encabezado_extra %}{% endblock %}
+        <div class="encabezado-contenido">
+            <div class="encabezado-logo">
+                <img src="{% static 'incendios/fcfm_horizontal.png' %}"
+                    alt="Facultad de Ciencias Físicas y Matemáticas">
+            </div>
+
+            <div class="encabezado-titulos">
+                <h1>{% block titulo_encabezado %}{% endblock %}</h1>
+                <p>{% block descripcion_encabezado %}{% endblock %}</p>
+            </div>
+        </div>
     </header>
 
     {% include "incendios/_navegacion.html" %}

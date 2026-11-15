@@ -9,42 +9,79 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #f4f6f8;
-    color: #202b38;
+    background: #f4f4f4;
+    color: #242424;
 }
 
 
 /* ==========================================
-   2. Encabezado
+   2. Encabezado institucional
    ========================================== */
 
 header {
-    background: #163348;
-    color: white;
-    padding: 34px max(20px, calc((100% - 1150px) / 2 + 20px));
+    position: relative;
+    background: #080808;
+    color: #ffffff;
+    padding: 18px 20px;
+}
+
+.encabezado-contenido {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 110px;
+}
+
+/* Logo alineado con el borde derecho
+   del contenido principal */
+
+.encabezado-logo {
+    position: absolute;
+    right: max(
+        20px,
+        calc((100% - 1150px) / 2 + 20px)
+    );
+    top: 50%;
+    transform: translateY(-50%);
+    width: 300px;
+}
+
+.encabezado-logo img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Título alineado con el borde izquierdo
+   del contenido principal */
+
+.encabezado-titulos {
+    flex: 1;
+    min-width: 0;
+
+    margin-left: max(
+        0px,
+        calc((100vw - 1150px) / 2)
+    );
+
+    margin-right: calc(
+        320px + max(0px, (100vw - 1150px) / 2)
+    );
 }
 
 header h1 {
-    margin: 0 0 10px;
-    font-size: 30px;
+    margin: 0 0 9px;
+    font-size: 27px;
     font-weight: 700;
     line-height: 1.25;
 }
 
 header p {
     margin: 0;
-    color: #d5e0e8;
+    color: #c9c9c9;
     font-size: 15px;
     font-weight: 400;
     line-height: 1.6;
-}
-
-header a {
-    color: white;
-}
-
-header a:hover {
-    color: #d5e0e8;
 }
 
 
@@ -54,7 +91,7 @@ header a:hover {
 
 .navegacion-principal {
     width: 100%;
-    background: #176b83;
+    background: #303030;
 }
 
 .navegacion-contenido {
@@ -74,29 +111,32 @@ header a:hover {
     display: flex;
     align-items: center;
     justify-content: center;
+
     padding: 19px 22px;
-    color: #d5e9ef;
+
+    color: #dedede;
     font-size: 15px;
     font-weight: 400;
     text-decoration: none;
     white-space: nowrap;
+
     transition: background 0.2s, color 0.2s;
 }
 
 .navegacion-enlaces a:hover {
-    color: white;
-    background: #ffffff18;
+    color: #ffffff;
+    background: #454545;
 }
 
 .navegacion-enlaces a:focus-visible {
-    outline: 2px solid white;
+    outline: 2px solid #ffffff;
     outline-offset: -4px;
 }
 
 /* Página activa */
 
 .navegacion-enlaces a.activo {
-    color: white;
+    color: #ffffff;
     font-weight: 700;
 }
 
@@ -108,11 +148,13 @@ header a:hover {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
+
     width: 0;
     height: 0;
+
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-    border-bottom: 8px solid #f4f6f8;
+    border-bottom: 8px solid #f4f4f4;
 }
 
 
@@ -128,7 +170,7 @@ main {
 
 .panel,
 .indicador {
-    background: white;
+    background: #ffffff;
     padding: 24px;
     border-radius: 10px;
     box-shadow: 0 2px 8px #0000000d;
@@ -162,26 +204,26 @@ button {
 }
 
 select {
-    border: 1px solid #ccd5dd;
-    background: white;
-    color: #202b38;
+    border: 1px solid #d5d5d5;
+    background: #ffffff;
+    color: #242424;
 }
 
 button {
     border: none;
-    background: #176b83;
-    color: white;
+    background: #424242;
+    color: #ffffff;
     cursor: pointer;
     transition: background 0.2s;
 }
 
 button:hover {
-    background: #12566a;
+    background: #303030;
 }
 
 button:focus-visible,
 select:focus-visible {
-    outline: 2px solid #176b83;
+    outline: 2px solid #555555;
     outline-offset: 2px;
 }
 
@@ -207,7 +249,7 @@ select:focus-visible {
 
 .indicador h3 {
     margin-top: 0;
-    color: #647587;
+    color: #666666;
     font-size: 15px;
     font-weight: 600;
 }
@@ -255,16 +297,16 @@ th,
 td {
     padding: 13px;
     text-align: left;
-    border-bottom: 1px solid #e5e9ed;
+    border-bottom: 1px solid #e6e6e6;
 }
 
 th {
-    background: #edf2f5;
+    background: #f0f0f0;
     font-weight: 700;
 }
 
 tbody tr:hover {
-    background: #f8fafb;
+    background: #fafafa;
 }
 
 
@@ -283,19 +325,46 @@ tbody tr:hover {
    10. Tablets y pantallas pequeñas
    ========================================== */
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
     header {
-        padding: 26px 20px;
+        padding: 20px;
+    }
+
+    .encabezado-contenido {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 18px;
+        min-height: 0;
+    }
+
+    .encabezado-logo {
+        position: static;
+        transform: none;
+        width: min(270px, 100%);
+        margin-left: auto;
+    }
+
+    .encabezado-titulos {
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
     }
 
     header h1 {
-        font-size: 25px;
+        font-size: 24px;
     }
 
     header p {
         font-size: 14px;
     }
+}
 
+
+/* ==========================================
+   11. Tablets y móviles
+   ========================================== */
+
+@media (max-width: 700px) {
     .navegacion-contenido {
         padding: 0 10px;
     }
@@ -343,7 +412,7 @@ tbody tr:hover {
 
 
 /* ==========================================
-   11. Teléfonos
+   12. Teléfonos
    ========================================== */
 
 @media (max-width: 600px) {
