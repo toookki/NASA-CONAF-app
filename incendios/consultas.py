@@ -83,7 +83,7 @@ def obtener_causas(region_id=None, temporada=None):
     parametros = []
 
     if region_id is not None:
-        condiciones.append("p.id_region = %s")
+        condiciones.append("i.id_region = %s")
         parametros.append(region_id)
 
     if temporada is not None:
@@ -109,11 +109,7 @@ def obtener_causas(region_id=None, temporada=None):
                 ) AS causa,
                 COUNT(*) AS total_incendios,
                 COALESCE(SUM(i.superficie_total_ha), 0)::numeric AS superficie_ha
-            FROM electromaquinas.incendio i
-            JOIN electromaquinas.comuna c
-                ON i.id_comuna = c.id_comuna
-            JOIN electromaquinas.provincia p
-                ON c.id_provincia = p.id_provincia
+            FROM electromaquinas.v_incendios_region i
             {filtro}
             GROUP BY 1
         )
@@ -140,7 +136,7 @@ def obtener_coincidencias(region_id=None, temporada=None):
     parametros = []
 
     if region_id is not None:
-        condiciones.append("p.id_region = %s")
+        condiciones.append("i.id_region = %s")
         parametros.append(region_id)
 
     if temporada is not None:
@@ -164,11 +160,7 @@ def obtener_coincidencias(region_id=None, temporada=None):
                 EXTRACT(
                     YEAR FROM i.fecha - INTERVAL '6 months'
                 )::integer AS temporada_inicio
-            FROM electromaquinas.incendio i
-            JOIN electromaquinas.comuna c
-                ON i.id_comuna = c.id_comuna
-            JOIN electromaquinas.provincia p
-                ON c.id_provincia = p.id_provincia
+            FROM electromaquinas.v_incendios_region i
             {filtro}
         ),
         relaciones AS (
@@ -226,7 +218,7 @@ def obtener_vegetacion(region_id=None, temporada=None):
     parametros = []
 
     if region_id is not None:
-        condiciones.append("p.id_region = %s")
+        condiciones.append("i.id_region = %s")
         parametros.append(region_id)
 
     if temporada is not None:
@@ -250,15 +242,11 @@ def obtener_vegetacion(region_id=None, temporada=None):
                 a.id_vegetacion,
                 v.tipo_nombre,
                 a.superficie_quemada_ha
-            FROM electromaquinas.incendio i
+            FROM electromaquinas.v_incendios_region i
             JOIN electromaquinas.afecta a
                 ON i.id_incendio = a.id_incendio
             JOIN electromaquinas.tipo_vegetacion v
                 ON a.id_vegetacion = v.id_vegetacion
-            JOIN electromaquinas.comuna c
-                ON i.id_comuna = c.id_comuna
-            JOIN electromaquinas.provincia p
-                ON c.id_provincia = p.id_provincia
             {filtro}
         ),
         resumen_vegetacion AS (

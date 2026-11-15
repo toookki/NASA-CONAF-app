@@ -311,3 +311,38 @@ class ConfiguracionTests(SimpleTestCase):
                 call_command("collectstatic", interactive=False, verbosity=0)
                 archivo_css = Path(destino) / "incendios" / "estilos.css"
                 self.assertTrue(archivo_css.is_file())
+
+
+class ConsultasVistaSQLTests(SimpleTestCase):
+    """Comprueba que Q2-Q4 usen la vista sin perder parametrización."""
+
+    def verificar_consulta(self, funcion):
+        from datetime import date
+
+        with patch(
+            "incendios.consultas.ejecutar_consulta", return_value=[]
+        ) as ejecutar:
+            funcion(region_id=7, temporada=2016)
+
+        sql, parametros = ejecutar.call_args.args
+        self.assertIn("FROM electromaquinas.v_incendios_region i", sql)
+        self.assertIn("i.id_region = %s", sql)
+        self.assertIn("i.fecha >= %s AND i.fecha < %s", sql)
+        self.assertEqual(parametros, [
+            7, date(2016, 7, 1), date(2017, 7, 1),
+        ])
+        self.assertNotIn("JOIN electromaquinas.comuna", sql)
+        self.assertNotIn("JOIN electromaquinas.provincia", sql)
+        self.assertNotIn("FROM electromaquinas.incendio i", sql)
+
+    def test_causas_usa_vista(self):
+        from .consultas import obtener_causas
+        self.verificar_consulta(obtener_causas)
+
+    def test_coincidencias_usa_vista(self):
+        from .consultas import obtener_coincidencias
+        self.verificar_consulta(obtener_coincidencias)
+
+    def test_vegetacion_usa_vista(self):
+        from .consultas import obtener_vegetacion
+        self.verificar_consulta(obtener_vegetacion)
