@@ -11,7 +11,7 @@ from django.db import InterfaceError, OperationalError, ProgrammingError
 from django.test import override_settings
 
 from django.test import RequestFactory, SimpleTestCase
-from django.urls import reverse
+from django.urls import Resolver404, resolve, reverse
 
 from .filtros import FiltroInvalido, opciones_temporadas, validar_filtros
 
@@ -304,6 +304,15 @@ class ConfiguracionTests(SimpleTestCase):
         self.assertGreater(opciones["connect_timeout"], 0)
         self.assertIn("statement_timeout=", opciones["options"])
         self.assertEqual(configuracion["CONN_MAX_AGE"], 0)
+
+    def test_parametros_aislados_y_sentencias_preparadas(self):
+        opciones = settings.DATABASES["incendios"]["OPTIONS"]
+        self.assertIs(opciones["server_side_binding"], True)
+        self.assertEqual(opciones["prepare_threshold"], 0)
+
+    def test_administracion_no_expuesta(self):
+        with self.assertRaises(Resolver404):
+            resolve("/admin/")
 
     def test_directorio_de_static_collectstatic(self):
         with TemporaryDirectory() as destino:

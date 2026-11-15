@@ -125,6 +125,12 @@ DATABASES = {
         # connect_timeout limita la apertura de la conexión (segundos).
         # statement_timeout limita CADA instrucción SQL (milisegundos).
         "OPTIONS": {
+            # Psycopg 3: parámetros enviados por separado a PostgreSQL y
+            # sentencias preparadas desde la primera ejecución. El backend
+            # de Django desactiva las sentencias preparadas por defecto.
+            # No usar un pool en modo transacción sin verificar compatibilidad.
+            "server_side_binding": True,
+            "prepare_threshold": 0,
             "connect_timeout": entero_positivo(
                 "POSTGRES_CONNECT_TIMEOUT", 5
             ),
