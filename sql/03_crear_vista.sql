@@ -1,5 +1,4 @@
 -- Vista convencional: centraliza la relación territorial de los incendios.
--- No almacena filas ni modifica las tablas de origen.
 -- Utilizada por Q2 (causas), Q3 (coincidencias) y Q4 (vegetación).
 CREATE VIEW electromaquinas.v_incendios_region AS
 SELECT

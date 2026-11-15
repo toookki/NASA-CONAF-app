@@ -1,10 +1,5 @@
 -- Índices candidatos para las consultas Q1–Q4.
--- No modifica datos ni código Django.
 -- Ejecutar con scripts/gestionar_indices.py crear --confirmar.
--- CREATE INDEX CONCURRENTLY debe ejecutarse fuera de una transacción.
--- Requiere ser propietario de las tablas o contar con permisos suficientes en el esquema.
--- IF NOT EXISTS compara NOMBRES, no garantiza la misma definición si ya existía.
-
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_incendio_comuna_fecha
 ON electromaquinas.incendio (id_comuna, fecha);
 
